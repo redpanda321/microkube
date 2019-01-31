@@ -12,12 +12,16 @@ module Microkube
     JWT_KEY = 'config/secrets/barong.key'.freeze
     SSH_KEY = 'config/secrets/kite.key'.freeze
 
-    def render(overwrite = false)
+    def initialize(overwrite = false)
+      @overwrite = overwrite
+    end
+
+    def render
       render_keys
 
       Dir.glob("#{TEMPLATE_PATH}/**/*.erb").each do |file|
         output_file = template_name(file)
-        next if !overwrite && File.exist?(output_file)
+        next if !@overwrite && File.exist?(output_file)
         render_file(file, output_file)
       end
     end
@@ -47,6 +51,7 @@ module Microkube
     end
 
     def generate_key(filename, public: false)
+      return if !@overwrite && File.exist?(filename)
       key = SSHKey.generate(type: 'RSA', bits: 2048)
       File.open(filename, 'w') { |file| file.puts(key.private_key) }
       File.open("#{filename}.pub", 'w') { |file| file.puts(key.ssh_public_key) } if public
